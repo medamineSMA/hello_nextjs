@@ -35,7 +35,7 @@ export default function Login() {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: `${window.location.origin}/auth/callback`
+                    redirectTo: 'https://hello-nextjs-q66u-git-main-medaminesmas-projects.vercel.app/auth/callback'
                 }
             });
             if (error) throw error;
