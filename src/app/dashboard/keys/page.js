@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import { FaCopy, FaEye, FaEyeSlash, FaEdit, FaTrash } from 'react-icons/fa';
@@ -44,11 +44,7 @@ export default function Keys() {
     const router = useRouter();
     const supabase = createClientComponentClient();
 
-    useEffect(() => {
-        fetchKeys();
-    }, []);
-
-    const fetchKeys = async () => {
+    const fetchKeys = useCallback(async () => {
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
@@ -68,7 +64,11 @@ export default function Keys() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [supabase, router]);
+
+    useEffect(() => {
+        fetchKeys();
+    }, [fetchKeys]);
 
     const handleAddKey = async (keyData) => {
         try {
@@ -334,7 +334,7 @@ export default function Keys() {
             >
                 <div className="space-y-4">
                     <p className="text-gray-700">
-                        Are you sure you want to delete the key "{selectedKey?.name}"? This action cannot be undone.
+                        Are you sure you want to delete the key &quot;{selectedKey?.name}&quot;? This action cannot be undone.
                     </p>
                     <div className="flex justify-end space-x-2">
                         <button
