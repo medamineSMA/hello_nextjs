@@ -23,48 +23,36 @@ export async function GET() {
 }
 
 export async function POST(request) {
-    const supabase = createRouteHandlerClient({ cookies });
-
     try {
-        // Check authentication
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        if (authError) {
-            console.error('Auth error:', authError);
-            return new Response(JSON.stringify({ error: 'Authentication error' }), { status: 401 });
-        }
-        if (!session) {
-            return new Response(JSON.stringify({ error: 'No session found' }), { status: 401 });
-        }
-
         // Parse request body
         const { key } = await request.json();
         if (!key) {
             return new Response(JSON.stringify({ error: 'Key is required' }), { status: 400 });
         }
 
-        // Define your secret key (store this in an environment variable in production!)
-        const SECRET_KEY = process.env.API_SECRET_KEY || "my-secret-key";
+        // Create Supabase client
+        const supabase = createRouteHandlerClient({ cookies });
 
-        // Check if the provided key matches
-        if (key !== SECRET_KEY) {
+        // Check if the key exists in the api_keys table
+        const { data, error } = await supabase
+            .from('api_keys')
+            .select('*')
+            .eq('key', key)
+            .single();
+
+        if (error || !data) {
             return new Response(JSON.stringify({ error: "Unauthorized" }), {
                 status: 401,
                 headers: { "Content-Type": "application/json" },
             });
         }
 
-        // If key matches, return your data (replace with your actual data logic)
-        const data = [
-            { id: 1, value: "foo" },
-            { id: 2, value: "bar" },
-        ];
-
-        return new Response(JSON.stringify(data), {
+        // If key is valid, return a success message (add your logic here)
+        return new Response(JSON.stringify({ message: "API key validated. Ready for summarization!" }), {
             status: 200,
             headers: { "Content-Type": "application/json" },
         });
     } catch (error) {
-        console.error('Unexpected error:', error);
         return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     }
 }
