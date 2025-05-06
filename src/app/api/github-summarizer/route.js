@@ -3,8 +3,18 @@ import { cookies } from 'next/headers';
 
 export async function POST(request) {
     try {
-        // Parse request body
-        const { key } = await request.json();
+        // 1. Try to get key from Authorization header
+        const authHeader = request.headers.get('authorization');
+        let key = null;
+
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            key = authHeader.replace('Bearer ', '').trim();
+        } else {
+            // 2. Fallback: Try to get key from request body
+            const body = await request.json();
+            key = body.key;
+        }
+
         if (!key) {
             return new Response(JSON.stringify({ error: 'Key is required' }), { status: 400 });
         }
@@ -18,6 +28,8 @@ export async function POST(request) {
             .select('*')
             .eq('key', key)
             .single();
+
+        console.log('Supabase data:', data, 'error:', error);
 
         if (error || !data) {
             return new Response(JSON.stringify({ error: "Unauthorized" }), {
