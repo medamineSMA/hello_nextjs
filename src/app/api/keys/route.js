@@ -37,33 +37,32 @@ export async function POST(request) {
         }
 
         // Parse request body
-        const { name } = await request.json();
-        if (!name) {
-            return new Response(JSON.stringify({ error: 'Name is required' }), { status: 400 });
+        const { key } = await request.json();
+        if (!key) {
+            return new Response(JSON.stringify({ error: 'Key is required' }), { status: 400 });
         }
 
-        // Generate API key
-        const key = generateApiKey();
+        // Define your secret key (store this in an environment variable in production!)
+        const SECRET_KEY = process.env.API_SECRET_KEY || "my-secret-key";
 
-        // Insert into database
-        const { data, error: insertError } = await supabase
-            .from('api_keys')
-            .insert([
-                {
-                    name,
-                    key,
-                    user_id: session.user.id
-                }
-            ])
-            .select()
-            .single();
-
-        if (insertError) {
-            console.error('Insert error:', insertError);
-            return new Response(JSON.stringify({ error: insertError.message }), { status: 500 });
+        // Check if the provided key matches
+        if (key !== SECRET_KEY) {
+            return new Response(JSON.stringify({ error: "Unauthorized" }), {
+                status: 401,
+                headers: { "Content-Type": "application/json" },
+            });
         }
 
-        return new Response(JSON.stringify(data), { status: 201 });
+        // If key matches, return your data (replace with your actual data logic)
+        const data = [
+            { id: 1, value: "foo" },
+            { id: 2, value: "bar" },
+        ];
+
+        return new Response(JSON.stringify(data), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+        });
     } catch (error) {
         console.error('Unexpected error:', error);
         return new Response(JSON.stringify({ error: error.message }), { status: 500 });
