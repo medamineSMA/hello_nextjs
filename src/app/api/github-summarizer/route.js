@@ -1,31 +1,20 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
-export async function GET() {
-    const supabase = createRouteHandlerClient({ cookies });
-
-    try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-            return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
-        }
-
-        const { data, error } = await supabase
-            .from('api_keys')
-            .select('*')
-            .eq('user_id', session.user.id);
-
-        if (error) throw error;
-        return new Response(JSON.stringify(data), { status: 200 });
-    } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-    }
-}
-
 export async function POST(request) {
     try {
-        // Parse request body
-        const { key } = await request.json();
+        // 1. Try to get key from Authorization header
+        const authHeader = request.headers.get('authorization');
+        let key = null;
+
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            key = authHeader.replace('Bearer ', '').trim();
+        } else {
+            // 2. Fallback: Try to get key from request body
+            const body = await request.json();
+            key = body.key;
+        }
+
         if (!key) {
             return new Response(JSON.stringify({ error: 'Key is required' }), { status: 400 });
         }
@@ -39,6 +28,8 @@ export async function POST(request) {
             .select('*')
             .eq('key', key)
             .single();
+
+        console.log('Supabase data:', data, 'error:', error);
 
         if (error || !data) {
             return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -56,12 +47,3 @@ export async function POST(request) {
         return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     }
 }
-
-function generateApiKey() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let key = '';
-    for (let i = 0; i < 32; i++) {
-        key += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return key;
-} 
